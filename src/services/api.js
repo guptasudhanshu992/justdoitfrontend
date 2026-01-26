@@ -3,7 +3,8 @@
  * Handles all communication with the FastAPI backend
  */
 
-const API_BASE_URL = 'http://localhost:8000/api/v1/api';
+//const API_BASE_URL = 'http://localhost:8000/api/v1/api';
+const API_BASE_URL = 'https://api.priceactionrepository.com/api/v1/api';
 
 /**
  * Generic fetch wrapper with error handling
