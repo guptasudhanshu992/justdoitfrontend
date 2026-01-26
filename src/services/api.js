@@ -4,7 +4,8 @@
  */
 
 //const API_BASE_URL = 'http://localhost:8000/api/v1/api';
-const API_BASE_URL = 'https://api.priceactionrepository.com/api/v1/api';
+export const API_BASE_URL = 'https://api.priceactionrepository.com/api/v1/api';
+export const API_BASE_DOMAIN = 'https://api.priceactionrepository.com';
 
 /**
  * Generic fetch wrapper with error handling

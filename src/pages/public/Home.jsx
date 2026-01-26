@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Box, Heading, useColorModeValue, Spinner, Text } from "@chakra-ui/react";
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_DOMAIN } from '../../services/api';
 
 export default function Home() {
   const textColor = useColorModeValue("gray.900", "gray.50");
@@ -11,7 +11,7 @@ export default function Home() {
   useEffect(() => {
     const fetchMessage = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/`);
+        const response = await fetch(`${API_BASE_DOMAIN}/`);
         if (!response.ok) {
           throw new Error("Failed to fetch message");
         }
