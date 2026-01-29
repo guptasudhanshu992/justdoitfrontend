@@ -1,4 +1,4 @@
-import { Box, Accordion, AccordionItem, AccordionButton, AccordionPanel, HStack, useColorModeValue, Link } from "@chakra-ui/react";
+import { Box, useColorModeValue, Link } from "@chakra-ui/react";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 
 export default function AdminSidebar() {
@@ -9,12 +9,6 @@ export default function AdminSidebar() {
   const activeBgColor = useColorModeValue("blue.50", "gray.700");
 
   const isActive = (path) => location.pathname === path;
-  
-  // Check if any blog section route is active
-  const isBlogSectionActive = () => {
-    const blogPaths = ['/admin/blog-posts', '/admin/categories', '/admin/tags'];
-    return blogPaths.some(path => location.pathname.startsWith(path));
-  };
 
   const SidebarLink = ({ to, children }) => (
     <Link
@@ -44,35 +38,25 @@ export default function AdminSidebar() {
       {/* Dashboard Link */}
       <SidebarLink to="/admin">Dashboard</SidebarLink>
 
-      {/* Blog Accordion */}
-      <Accordion allowToggle mt={4} defaultIndex={isBlogSectionActive() ? [0] : []}>
-      {/* Blog Section */}
-      <AccordionItem border="none" mb={2}>
-        <AccordionButton
-          px={4}
-          py={3}
-          rounded="md"
-          fontWeight="600"
-          fontSize="sm"
-          color={isBlogSectionActive() ? activeColor : textColor}
-          _hover={{ bg: hoverBgColor }}
-          _expanded={{ bg: hoverBgColor, color: activeColor }}
-        >
-          <Box flex="1" textAlign="left">
-            Blog
-          </Box>
-          <Box ml={2}>▼</Box>
-        </AccordionButton>
+      {/* Blog Link */}
+      <Box mt={4}>
+        <SidebarLink to="/admin/blog-posts">Blog</SidebarLink>
+      </Box>
 
-        <AccordionPanel pb={0} pt={2} pl={4}>
-          <Box>
-            <SidebarLink to="/admin/blog-posts">Blog Posts</SidebarLink>
-            <SidebarLink to="/admin/categories">Categories</SidebarLink>
-            <SidebarLink to="/admin/tags">Tags</SidebarLink>
-          </Box>
-        </AccordionPanel>
-      </AccordionItem>
-      </Accordion>
+      {/* Categories Link */}
+      <Box mt={2}>
+        <SidebarLink to="/admin/categories">Categories</SidebarLink>
+      </Box>
+
+      {/* Tags Link */}
+      <Box mt={2}>
+        <SidebarLink to="/admin/tags">Tags</SidebarLink>
+      </Box>
+
+      {/* Media Link */}
+      <Box mt={4}>
+        <SidebarLink to="/admin/media">Media</SidebarLink>
+      </Box>
     </>
   );
 }

@@ -8,6 +8,7 @@ import CategoriesContent from "./CategoriesContent";
 import CategoryPage from "./CategoryPage";
 import TagsContent from "./TagsContent";
 import TagPage from "./TagPage";
+import MediaContent from "./MediaContent";
 
 export default function AdminDashboard() {
   const textColor = useColorModeValue("gray.900", "gray.50");
@@ -26,6 +27,7 @@ export default function AdminDashboard() {
           <Route path="/tags" element={<TagsContent />} />
           <Route path="/tags/new" element={<TagPage />} />
           <Route path="/tags/:id/edit" element={<TagPage />} />
+          <Route path="/media" element={<MediaContent />} />
         </Routes>
       </AdminLayout>
     </VStack>

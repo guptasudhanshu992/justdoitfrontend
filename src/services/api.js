@@ -4,8 +4,12 @@
  */
 
 //const API_BASE_URL = 'http://localhost:8000/api/v1/api';
-export const API_BASE_URL = 'https://api.priceactionrepository.com/api/v1/api';
-export const API_BASE_DOMAIN = 'https://api.priceactionrepository.com';
+
+//export const API_BASE_URL = 'https://api.priceactionrepository.com/api/v1/api';
+//export const API_BASE_DOMAIN = 'https://api.priceactionrepository.com';
+
+export const API_BASE_URL = 'http://127.0.0.1:8000/api/v1/api';
+export const API_BASE_DOMAIN = 'http://127.0.0.1:8000';
 
 /**
  * Generic fetch wrapper with error handling
@@ -238,9 +242,134 @@ export const tagsApi = {
   },
 };
 
+// ============================================================================
+// MEDIA API
+// ============================================================================
+
+export const mediaApi = {
+  /**
+   * Get all media files
+   * @param {Object} params - Query parameters
+   * @param {string} params.folder - Filter by folder (images, videos)
+   * @param {number} params.limit - Maximum number of items to return
+   * @param {string} params.continuation_token - Token for pagination
+   */
+  getAll: async (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.folder) queryParams.append('folder', params.folder);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.continuation_token) queryParams.append('continuation_token', params.continuation_token);
+    
+    const queryString = queryParams.toString();
+    const url = `${API_BASE_DOMAIN}/api/v1/api/media/list${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch media');
+    }
+    
+    return data;
+  },
+
+  /**
+   * Upload an image
+   * @param {File} file - The file to upload
+   */
+  uploadImage: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const url = `${API_BASE_DOMAIN}/api/v1/api/media/upload/image`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Failed to upload image');
+    }
+    
+    return data;
+  },
+
+  /**
+   * Upload a video
+   * @param {File} file - The file to upload
+   */
+  uploadVideo: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const url = `${API_BASE_DOMAIN}/api/v1/api/media/upload/video`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Failed to upload video');
+    }
+    
+    return data;
+  },
+
+  /**
+   * Upload any allowed file
+   * @param {File} file - The file to upload
+   */
+  uploadFile: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const url = `${API_BASE_DOMAIN}/api/v1/api/media/upload/file`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Failed to upload file');
+    }
+    
+    return data;
+  },
+
+  /**
+   * Delete a media file
+   * @param {string} key - The object key to delete
+   */
+  delete: async (key) => {
+    const url = `${API_BASE_DOMAIN}/api/v1/api/media/${encodeURIComponent(key)}`;
+    
+    const response = await fetch(url, {
+      method: 'DELETE',
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Failed to delete media');
+    }
+    
+    return data;
+  },
+};
+
 // Export all APIs
 export default {
   blogs: blogsApi,
   categories: categoriesApi,
   tags: tagsApi,
+  media: mediaApi,
 };

@@ -15,6 +15,7 @@ import {
   Icon,
 } from "@chakra-ui/react";
 import { blogsApi } from "../../services/api";
+import BlockRenderer from "../../components/common/BlockRenderer";
 
 export default function BlogDetails() {
   const { slug } = useParams();
@@ -172,75 +173,14 @@ export default function BlogDetails() {
       <Box flex={1} px={{ base: 4, md: 8 }} py={{ base: 8, md: 12 }}>
         <Container maxW="800px">
           <Box>
-            {/* Blog Content */}
+            {/* Blog Content - Using BlockRenderer for Editor.js content */}
             <Box
               className="blog-content"
               color={textColor}
               fontSize={{ base: "md", md: "lg" }}
               lineHeight="1.8"
-              sx={{
-                "& p": {
-                  mb: 6,
-                },
-                "& h2": {
-                  fontSize: "2xl",
-                  fontWeight: "700",
-                  mt: 8,
-                  mb: 4,
-                },
-                "& h3": {
-                  fontSize: "xl",
-                  fontWeight: "600",
-                  mt: 6,
-                  mb: 3,
-                },
-                "& ul, & ol": {
-                  pl: 6,
-                  mb: 6,
-                },
-                "& li": {
-                  mb: 2,
-                },
-                "& blockquote": {
-                  borderLeft: "4px solid",
-                  borderColor: "blue.500",
-                  pl: 4,
-                  py: 2,
-                  my: 6,
-                  fontStyle: "italic",
-                  color: subtextColor,
-                },
-                "& pre": {
-                  bg: useColorModeValue("gray.100", "gray.700"),
-                  p: 4,
-                  borderRadius: "md",
-                  overflowX: "auto",
-                  mb: 6,
-                },
-                "& code": {
-                  bg: useColorModeValue("gray.100", "gray.700"),
-                  px: 2,
-                  py: 1,
-                  borderRadius: "sm",
-                  fontSize: "sm",
-                },
-                "& a": {
-                  color: "blue.500",
-                  textDecoration: "underline",
-                },
-                "& img": {
-                  maxW: "100%",
-                  borderRadius: "md",
-                  my: 6,
-                },
-              }}
             >
-              {/* Render content - for now just as text, later can use markdown parser */}
-              {post.content.split("\n\n").map((paragraph, index) => (
-                <Text key={index} mb={6}>
-                  {paragraph}
-                </Text>
-              ))}
+              <BlockRenderer content={post.content} />
             </Box>
           </Box>
 

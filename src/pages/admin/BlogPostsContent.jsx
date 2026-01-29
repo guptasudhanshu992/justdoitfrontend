@@ -30,6 +30,11 @@ export default function BlogPostsContent() {
   const textColor = useColorModeValue("gray.900", "gray.50");
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const hoverBgColor = useColorModeValue("gray.50", "gray.700");
+  const tableHeaderBg = useColorModeValue("gray.50", "gray.800");
+  const publishedBg = useColorModeValue("green.100", "green.900");
+  const publishedColor = useColorModeValue("green.800", "green.100");
+  const draftBg = useColorModeValue("yellow.100", "yellow.900");
+  const draftColor = useColorModeValue("yellow.800", "yellow.100");
   const toast = useToast();
   const cancelRef = useRef();
 
@@ -156,7 +161,7 @@ export default function BlogPostsContent() {
           rounded="md"
         >
           <Table variant="simple">
-            <Thead bg={useColorModeValue("gray.50", "gray.800")}>
+            <Thead bg={tableHeaderBg}>
               <Tr>
                 <Th color={textColor} fontWeight="600">
                   Title
@@ -190,16 +195,8 @@ export default function BlogPostsContent() {
                       rounded="full"
                       fontSize="xs"
                       fontWeight="600"
-                      bg={
-                        post.is_published
-                          ? useColorModeValue("green.100", "green.900")
-                          : useColorModeValue("yellow.100", "yellow.900")
-                      }
-                      color={
-                        post.is_published
-                          ? useColorModeValue("green.800", "green.100")
-                          : useColorModeValue("yellow.800", "yellow.100")
-                      }
+                      bg={post.is_published ? publishedBg : draftBg}
+                      color={post.is_published ? publishedColor : draftColor}
                     >
                       {post.is_published ? "Published" : "Draft"}
                     </Box>
