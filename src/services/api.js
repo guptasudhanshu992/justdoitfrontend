@@ -5,11 +5,11 @@
 
 //const API_BASE_URL = 'http://localhost:8000/api/v1/api';
 
-//export const API_BASE_URL = 'https://api.priceactionrepository.com/api/v1/api';
-//export const API_BASE_DOMAIN = 'https://api.priceactionrepository.com';
+export const API_BASE_URL = 'https://api.priceactionrepository.com/api/v1/api';
+export const API_BASE_DOMAIN = 'https://api.priceactionrepository.com';
 
-export const API_BASE_URL = 'http://127.0.0.1:8000/api/v1/api';
-export const API_BASE_DOMAIN = 'http://127.0.0.1:8000';
+//export const API_BASE_URL = 'http://127.0.0.1:8000/api/v1/api';
+//export const API_BASE_DOMAIN = 'http://127.0.0.1:8000';
 
 /**
  * Generic fetch wrapper with error handling
