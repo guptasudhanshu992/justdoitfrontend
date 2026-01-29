@@ -97,7 +97,7 @@ export default function BlockEditor({
       class: Paragraph,
       inlineToolbar: true,
       config: {
-        placeholder: placeholder,
+        placeholderText: placeholder,
       },
     },
     list: {
@@ -149,7 +149,7 @@ export default function BlockEditor({
     linkTool: {
       class: LinkTool,
       config: {
-        endpoint: `${API_BASE_URL}/media/link-preview`, // Optional: implement link preview endpoint
+        endpoint: `${API_BASE_URL}/media/link-preview`,
       },
     },
     embed: {
@@ -179,7 +179,7 @@ export default function BlockEditor({
     },
   }), [placeholder]);
 
-  // Initialize Editor.js
+  // Initialize Editor.js only once on mount
   useEffect(() => {
     if (!holderRef.current || editorRef.current) return;
 
@@ -195,16 +195,6 @@ export default function BlockEditor({
           },
           placeholder: placeholder,
           readOnly: readOnly,
-          onChange: async () => {
-            if (onChange && editorRef.current) {
-              try {
-                const outputData = await editorRef.current.save();
-                onChange(outputData);
-              } catch (error) {
-                console.error("Error saving editor data:", error);
-              }
-            }
-          },
           onReady: () => {
             console.log("Editor.js is ready!");
           },
@@ -225,13 +215,28 @@ export default function BlockEditor({
         editorRef.current = null;
       }
     };
-  }, [holderId, data, placeholder, readOnly, onChange, getTools]);
+  }, [holderId, getTools, placeholder, readOnly]);
 
   // Method to get editor data (can be called by parent via ref)
+  // Filters out empty paragraphs to keep data clean
   const getData = useCallback(async () => {
     if (editorRef.current) {
       try {
-        return await editorRef.current.save();
+        const outputData = await editorRef.current.save();
+        
+        // Filter out empty paragraphs while keeping other block types
+        if (outputData.blocks) {
+          outputData.blocks = outputData.blocks.filter(block => {
+            if (block.type === 'paragraph') {
+              // Keep only non-empty paragraphs
+              return block.data?.text?.trim().length > 0;
+            }
+            // Keep all other block types (images, headers, etc.)
+            return true;
+          });
+        }
+        
+        return outputData;
       } catch (error) {
         console.error("Error getting editor data:", error);
         return null;
