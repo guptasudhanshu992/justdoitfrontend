@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -35,6 +35,7 @@ export default function BlogPostPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [editorKey] = useState(() => `editor-${Date.now()}`);
+  const editorRef = useRef(null);
 
   // Parse Editor.js content
   const parseEditorContent = (content) => {
@@ -182,9 +183,22 @@ export default function BlogPostPage() {
   const handleSave = async (e) => {
     e.preventDefault();
     
-    const hasContent = formData.content && 
-      formData.content.blocks && 
-      formData.content.blocks.length > 0;
+    // Get current editor data
+    let currentContent = formData.content;
+    if (editorRef.current && editorRef.current.getData) {
+      try {
+        const editorData = await editorRef.current.getData();
+        currentContent = editorData;
+        // Update formData with current editor content
+        setFormData(prev => ({ ...prev, content: editorData }));
+      } catch (error) {
+        console.error("Error getting editor data:", error);
+      }
+    }
+    
+    const hasContent = currentContent && 
+      currentContent.blocks && 
+      currentContent.blocks.length > 0;
     
     if (!formData.title.trim() || !hasContent) {
       toast({
@@ -201,14 +215,14 @@ export default function BlogPostPage() {
       setSaving(true);
 
       // Calculate word count and reading time from Editor.js content
-      const wordCount = calculateWordCount(formData.content);
+      const wordCount = calculateWordCount(currentContent);
       const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
       const payload = {
         title: formData.title,
         slug: formData.slug,
         excerpt: formData.excerpt,
-        content: formData.content,
+        content: currentContent,
         is_published: formData.is_published,
         featured: formData.featured,
         publish_at: formData.publish_date || new Date().toISOString(),
@@ -335,6 +349,7 @@ export default function BlogPostPage() {
                     </Text>
                     <Box minH="400px">
                       <BlockEditor
+                        ref={editorRef}
                         key={editorKey}
                         holderId={editorKey}
                         data={formData.content}

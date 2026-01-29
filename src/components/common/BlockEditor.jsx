@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, forwardRef } from "react";
 import EditorJS from "@editorjs/editorjs";
 import Header from "@editorjs/header";
 import List from "@editorjs/list";
@@ -28,13 +28,13 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/
  * @param {boolean} props.readOnly - Whether editor is read-only
  * @param {string} props.holderId - Unique ID for the editor holder
  */
-export default function BlockEditor({
+export default forwardRef(function BlockEditor({
   data = null,
   onChange,
   placeholder = "Start writing your content...",
   readOnly = false,
   holderId = "editorjs",
-}) {
+}, ref) {
   const editorRef = useRef(null);
   const holderRef = useRef(null);
 
@@ -250,7 +250,16 @@ export default function BlockEditor({
     if (holderRef.current) {
       holderRef.current.getData = getData;
     }
-  }, [getData]);
+    
+    // Also expose via ref if using forwardRef
+    if (ref) {
+      if (typeof ref === 'function') {
+        ref({ getData, editor: editorRef.current });
+      } else {
+        ref.current = { getData, editor: editorRef.current };
+      }
+    }
+  }, [getData, ref]);
 
   return (
     <Box
@@ -313,4 +322,4 @@ export default function BlockEditor({
       }}
     />
   );
-}
+});
