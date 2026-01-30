@@ -195,6 +195,17 @@ export default forwardRef(function BlockEditor({
           },
           placeholder: placeholder,
           readOnly: readOnly,
+          onChange: async () => {
+            // Call parent's onChange if provided (for real-time updates like word count)
+            if (onChange && editorRef.current) {
+              try {
+                const outputData = await editorRef.current.save();
+                onChange(outputData);
+              } catch (error) {
+                console.error("Error saving editor data for onChange:", error);
+              }
+            }
+          },
           onReady: () => {
             console.log("Editor.js is ready!");
           },
@@ -215,7 +226,7 @@ export default forwardRef(function BlockEditor({
         editorRef.current = null;
       }
     };
-  }, [holderId, getTools, placeholder, readOnly]);
+  }, [holderId, getTools, placeholder, readOnly, onChange]);
 
   // Method to get editor data (can be called by parent via ref)
   // Filters out empty paragraphs to keep data clean

@@ -55,7 +55,9 @@ export default function TagsContent() {
       setLoading(true);
       setError(null);
       const data = await tagsApi.getAll({ limit: 100 });
-      setTags(data);
+      // Handle both direct array and wrapped response
+      const tagsData = Array.isArray(data) ? data : (data?.data || data?.results || []);
+      setTags(tagsData);
     } catch (err) {
       setError(err.message || "Failed to fetch tags");
       toast({

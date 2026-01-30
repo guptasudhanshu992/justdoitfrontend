@@ -35,6 +35,8 @@ export default function BlogPostPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [editorKey] = useState(() => `editor-${Date.now()}`);
+  const [wordCount, setWordCount] = useState(0);
+  const [readingTime, setReadingTime] = useState(1);
   const editorRef = useRef(null);
 
   // Parse Editor.js content
@@ -153,12 +155,26 @@ export default function BlogPostPage() {
     setFormData(newFormData);
   };
 
-  // Handle Editor.js content change
+  // Handle Editor.js content change - Update word count in real-time
   const handleEditorChange = useCallback((data) => {
-    setFormData((prev) => ({
-      ...prev,
-      content: data,
-    }));
+    // Calculate word count and reading time for display
+    if (data && data.blocks) {
+      let count = 0;
+      data.blocks.forEach((block) => {
+        if (block.data?.text) {
+          const text = block.data.text.replace(/<[^>]*>/g, "");
+          count += text.split(/\s+/).filter((word) => word.length > 0).length;
+        }
+        if (block.data?.items) {
+          block.data.items.forEach((item) => {
+            const text = item.replace(/<[^>]*>/g, "");
+            count += text.split(/\s+/).filter((word) => word.length > 0).length;
+          });
+        }
+      });
+      setWordCount(count);
+      setReadingTime(Math.max(1, Math.ceil(count / 200)));
+    }
   }, []);
 
   // Calculate word count from Editor.js content
@@ -247,7 +263,7 @@ export default function BlogPostPage() {
         });
       } else {
         // Create new post
-        await blogsApi.create(payload);
+        const response = await blogsApi.create(payload);
         toast({
           title: "Post created",
           description: "The post has been created successfully.",
@@ -256,7 +272,11 @@ export default function BlogPostPage() {
           isClosable: true,
         });
       }
-      navigate("/admin/blog-posts");
+      
+      // Add a small delay to ensure data is ready on the blog posts page
+      setTimeout(() => {
+        navigate("/admin/blog-posts");
+      }, 500);
     } catch (err) {
       toast({
         title: "Error",
@@ -367,10 +387,10 @@ export default function BlogPostPage() {
                       opacity={0.6}
                     >
                       <Box>
-                        Words: {calculateWordCount(formData.content)}
+                        Words: {wordCount}
                       </Box>
                       <Box>
-                        Reading Time: {Math.max(1, Math.ceil(calculateWordCount(formData.content) / 200))} min
+                        Reading Time: {readingTime} min
                       </Box>
                     </Box>
                   </FormControl>

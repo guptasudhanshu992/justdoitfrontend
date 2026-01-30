@@ -90,6 +90,33 @@ export default function Blog() {
     fetchData();
   }, []);
 
+  // Helper function to extract text preview from Editor.js content
+  const getContentPreview = (content) => {
+    if (!content) return "";
+    
+    // If it's already a string, use it directly
+    if (typeof content === "string") {
+      return content.substring(0, 200) + "...";
+    }
+    
+    // If it's an Editor.js object with blocks
+    if (content?.blocks && Array.isArray(content.blocks)) {
+      let text = "";
+      for (const block of content.blocks) {
+        if (block.data?.text) {
+          text += block.data.text + " ";
+        }
+        if (block.data?.items && Array.isArray(block.data.items)) {
+          text += block.data.items.join(" ") + " ";
+        }
+        if (text.length >= 200) break;
+      }
+      return text.substring(0, 200) + "...";
+    }
+    
+    return "";
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -99,9 +126,15 @@ export default function Blog() {
         categoriesApi.getAll({ limit: 100 }),
         tagsApi.getAll({ limit: 100 }),
       ]);
-      setPosts(postsData);
-      setCategories(categoriesData);
-      setTags(tagsData);
+      
+      // Handle both direct array and wrapped response
+      const posts = Array.isArray(postsData) ? postsData : (postsData?.data || postsData?.results || []);
+      const categories = Array.isArray(categoriesData) ? categoriesData : (categoriesData?.data || categoriesData?.results || []);
+      const tags = Array.isArray(tagsData) ? tagsData : (tagsData?.data || tagsData?.results || []);
+      
+      setPosts(posts);
+      setCategories(categories);
+      setTags(tags);
     } catch (err) {
       setError(err.message || "Failed to load blog posts");
     } finally {
@@ -504,7 +537,7 @@ export default function Blog() {
                         fontSize="sm"
                         noOfLines={2}
                       >
-                        {post.excerpt || post.content?.substring(0, 200) + "..."}
+                        {post.excerpt || getContentPreview(post.content)}
                       </Text>
                     </Box>
 

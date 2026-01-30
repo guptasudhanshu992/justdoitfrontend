@@ -55,7 +55,9 @@ export default function CategoriesContent() {
       setLoading(true);
       setError(null);
       const data = await categoriesApi.getAll({ limit: 100 });
-      setCategories(data);
+      // Handle both direct array and wrapped response
+      const categoriesData = Array.isArray(data) ? data : (data?.data || data?.results || []);
+      setCategories(categoriesData);
     } catch (err) {
       setError(err.message || "Failed to fetch categories");
       toast({

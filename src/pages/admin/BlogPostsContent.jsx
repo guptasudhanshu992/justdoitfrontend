@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Button,
@@ -27,6 +27,7 @@ import { blogsApi } from "../../services/api";
 
 export default function BlogPostsContent() {
   const navigate = useNavigate();
+  const location = useLocation();
   const textColor = useColorModeValue("gray.900", "gray.50");
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const hoverBgColor = useColorModeValue("gray.50", "gray.700");
@@ -50,17 +51,19 @@ export default function BlogPostsContent() {
     onClose: onDeleteClose,
   } = useDisclosure();
 
-  // Fetch posts on component mount
+  // Fetch posts whenever component mounts or location changes (i.e., when navigating back to this page)
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [location]);
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await blogsApi.getAll({ limit: 100 });
-      setPosts(data);
+      // Handle both direct array and wrapped response
+      const postsData = Array.isArray(data) ? data : (data?.data || data?.results || []);
+      setPosts(postsData);
     } catch (err) {
       setError(err.message || "Failed to fetch posts");
       toast({
