@@ -14,9 +14,7 @@ import LinkTool from "@editorjs/link";
 import Embed from "@editorjs/embed";
 import ImageTool from "@editorjs/image";
 import { Box, useColorModeValue } from "@chakra-ui/react";
-
-// API base URL for media uploads
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1/api";
+import { API_BASE_URL } from "../../services/api";
 
 /**
  * Editor.js wrapper component for rich content editing
