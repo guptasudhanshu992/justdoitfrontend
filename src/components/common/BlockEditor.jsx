@@ -12,19 +12,13 @@ import Table from "@editorjs/table";
 import Warning from "@editorjs/warning";
 import LinkTool from "@editorjs/link";
 import Embed from "@editorjs/embed";
-import ImageTool from "@editorjs/image";
-import { Box, useColorModeValue } from "@chakra-ui/react";
+import SimpleImageTool from "./SimpleImageTool";
+import { Box, useColorModeValue, useDisclosure } from "@chakra-ui/react";
 import { API_BASE_URL } from "../../services/api";
+import ImageModal from "./ImageModal";
 
 /**
  * Editor.js wrapper component for rich content editing
- * 
- * @param {Object} props
- * @param {Object} props.data - Initial Editor.js data (blocks)
- * @param {Function} props.onChange - Callback when content changes
- * @param {string} props.placeholder - Placeholder text
- * @param {boolean} props.readOnly - Whether editor is read-only
- * @param {string} props.holderId - Unique ID for the editor holder
  */
 export default forwardRef(function BlockEditor({
   data = null,
@@ -35,50 +29,40 @@ export default forwardRef(function BlockEditor({
 }, ref) {
   const editorRef = useRef(null);
   const holderRef = useRef(null);
+  const currentImageToolRef = useRef(null);
+  const { isOpen: isImageModalOpen, onOpen: onImageModalOpen, onClose: onImageModalClose } = useDisclosure();
 
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.600");
   const textColor = useColorModeValue("gray.900", "gray.50");
 
-  // Image upload handler for Editor.js
-  const uploadImageByFile = async (file) => {
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch(`${API_BASE_URL}/media/upload/image`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-      return result;
-    } catch (error) {
-      console.error("Image upload failed:", error);
-      return {
-        success: 0,
-        message: "Upload failed",
-      };
+  // Handle image selection from modal
+  const handleImageSelect = (imageData) => {
+    if (currentImageToolRef.current) {
+      currentImageToolRef.current.setImage(imageData.url, imageData.caption || "");
+      currentImageToolRef.current = null;
+    }
+    onImageModalClose();
+    
+    // Trigger onChange
+    if (onChange && editorRef.current) {
+      editorRef.current.save().then(outputData => {
+        onChange(outputData);
+      }).catch(err => console.error("Save error:", err));
     }
   };
 
-  // Image upload by URL handler
-  const uploadImageByUrl = async (url) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/media/upload/url?url=${encodeURIComponent(url)}`, {
-        method: "POST",
-      });
-
-      const result = await response.json();
-      return result;
-    } catch (error) {
-      console.error("Image fetch failed:", error);
-      return {
-        success: 0,
-        message: "Failed to fetch image from URL",
-      };
-    }
+  // Handle modal close
+  const handleImageModalClose = () => {
+    currentImageToolRef.current = null;
+    onImageModalClose();
   };
+
+  // Handler when image tool requests to open modal
+  const handleImageToolClick = useCallback((blockIndex, toolInstance) => {
+    currentImageToolRef.current = toolInstance;
+    onImageModalOpen();
+  }, [onImageModalOpen]);
 
   // Editor.js tools configuration
   const getTools = useCallback(() => ({
@@ -95,7 +79,7 @@ export default forwardRef(function BlockEditor({
       class: Paragraph,
       inlineToolbar: true,
       config: {
-        placeholderText: placeholder,
+        placeholder: placeholder,
       },
     },
     list: {
@@ -110,13 +94,13 @@ export default forwardRef(function BlockEditor({
       inlineToolbar: true,
       config: {
         quotePlaceholder: "Enter a quote",
-        captionPlaceholder: "Quote author",
+        captionPlaceholder: "Quote's author",
       },
     },
     code: {
       class: Code,
       config: {
-        placeholder: "Enter code here...",
+        placeholder: "Enter code",
       },
     },
     inlineCode: {
@@ -164,43 +148,56 @@ export default forwardRef(function BlockEditor({
       },
     },
     image: {
-      class: ImageTool,
+      class: SimpleImageTool,
       config: {
-        uploader: {
-          uploadByFile: uploadImageByFile,
-          uploadByUrl: uploadImageByUrl,
-        },
-        captionPlaceholder: "Image caption",
-        buttonContent: "Select an image",
-        types: "image/*",
+        onSelectImage: handleImageToolClick,
       },
     },
-  }), [placeholder]);
+  }), [placeholder, handleImageToolClick]);
 
-  // Initialize Editor.js only once on mount
+  // Initialize Editor.js
   useEffect(() => {
     if (!holderRef.current || editorRef.current) return;
 
     const initEditor = async () => {
       try {
+        // Clean input data - filter out invalid image blocks
+        let cleanData = data || {
+          time: Date.now(),
+          blocks: [],
+          version: "2.29.0",
+        };
+        
+        if (cleanData.blocks) {
+          cleanData = {
+            ...cleanData,
+            blocks: cleanData.blocks.filter(block => {
+              if (block.type === 'image') {
+                const url = block.data?.url;
+                return url && (url.startsWith('http://') || url.startsWith('https://'));
+              }
+              if (block.type === 'paragraph') {
+                // Keep paragraphs with content
+                return block.data?.text !== undefined;
+              }
+              return true;
+            })
+          };
+        }
+        
         const editor = new EditorJS({
           holder: holderId,
           tools: getTools(),
-          data: data || {
-            time: Date.now(),
-            blocks: [],
-            version: "2.29.0",
-          },
+          data: cleanData,
           placeholder: placeholder,
           readOnly: readOnly,
           onChange: async () => {
-            // Call parent's onChange if provided (for real-time updates like word count)
             if (onChange && editorRef.current) {
               try {
                 const outputData = await editorRef.current.save();
                 onChange(outputData);
               } catch (error) {
-                console.error("Error saving editor data for onChange:", error);
+                console.error("Error in onChange:", error);
               }
             }
           },
@@ -217,7 +214,6 @@ export default forwardRef(function BlockEditor({
 
     initEditor();
 
-    // Cleanup on unmount
     return () => {
       if (editorRef.current && typeof editorRef.current.destroy === "function") {
         editorRef.current.destroy();
@@ -226,21 +222,21 @@ export default forwardRef(function BlockEditor({
     };
   }, [holderId, getTools, placeholder, readOnly, onChange]);
 
-  // Method to get editor data (can be called by parent via ref)
-  // Filters out empty paragraphs to keep data clean
+  // Get editor data - filters out empty/invalid blocks
   const getData = useCallback(async () => {
     if (editorRef.current) {
       try {
         const outputData = await editorRef.current.save();
         
-        // Filter out empty paragraphs while keeping other block types
         if (outputData.blocks) {
           outputData.blocks = outputData.blocks.filter(block => {
             if (block.type === 'paragraph') {
-              // Keep only non-empty paragraphs
               return block.data?.text?.trim().length > 0;
             }
-            // Keep all other block types (images, headers, etc.)
+            if (block.type === 'image') {
+              const url = block.data?.url;
+              return url && (url.startsWith('http://') || url.startsWith('https://'));
+            }
             return true;
           });
         }
@@ -260,7 +256,6 @@ export default forwardRef(function BlockEditor({
       holderRef.current.getData = getData;
     }
     
-    // Also expose via ref if using forwardRef
     if (ref) {
       if (typeof ref === 'function') {
         ref({ getData, editor: editorRef.current });
@@ -271,64 +266,63 @@ export default forwardRef(function BlockEditor({
   }, [getData, ref]);
 
   return (
-    <Box
-      ref={holderRef}
-      id={holderId}
-      bg={bgColor}
-      borderTop="1px solid"
-      borderBottom="1px solid"
-      borderColor={borderColor}
-      borderRadius="0"
-      minH="300px"
-      p={4}
-      color={textColor}
-      sx={{
-        // Editor.js styling overrides
-        ".ce-block__content": {
-          maxWidth: "100%",
-        },
-        ".ce-toolbar__content": {
-          maxWidth: "100%",
-        },
-        ".cdx-block": {
-          maxWidth: "100%",
-        },
-        ".ce-paragraph": {
-          lineHeight: "1.8",
-        },
-        ".ce-header": {
-          fontWeight: "700",
-        },
-        ".cdx-quote": {
-          borderLeftColor: "blue.500",
-        },
-        ".cdx-quote__text": {
-          fontStyle: "italic",
-        },
-        ".ce-code__textarea": {
-          bg: useColorModeValue("gray.100", "gray.700"),
-          color: textColor,
-          borderRadius: "md",
-        },
-        ".cdx-warning": {
-          bg: useColorModeValue("yellow.50", "yellow.900"),
-          borderColor: "yellow.500",
-        },
-        ".image-tool__image": {
-          borderRadius: "md",
-        },
-        ".image-tool__caption": {
-          fontSize: "sm",
-          color: useColorModeValue("gray.600", "gray.400"),
-        },
-        // Table styles
-        ".tc-table": {
-          borderColor: borderColor,
-        },
-        ".tc-cell": {
-          borderColor: borderColor,
-        },
-      }}
-    />
+    <>
+      <Box
+        ref={holderRef}
+        id={holderId}
+        minH="300px"
+        bg={bgColor}
+        borderWidth="1px"
+        borderColor={borderColor}
+        borderRadius="md"
+        p={4}
+        color={textColor}
+        sx={{
+          ".ce-block__content": {
+            maxWidth: "100%",
+          },
+          ".ce-toolbar__content": {
+            maxWidth: "100%",
+          },
+          ".cdx-block": {
+            padding: "0.4em 0",
+          },
+          ".ce-paragraph": {
+            lineHeight: "1.6",
+          },
+          ".ce-header": {
+            padding: "0.6em 0 0.3em",
+          },
+          ".cdx-quote": {
+            borderLeft: `3px solid ${borderColor}`,
+            paddingLeft: "1em",
+            fontStyle: "italic",
+          },
+          ".cdx-list": {
+            paddingLeft: "1.5em",
+          },
+          ".ce-code__textarea": {
+            fontFamily: "monospace",
+            fontSize: "14px",
+            background: useColorModeValue("gray.50", "gray.900"),
+            color: textColor,
+            borderRadius: "4px",
+          },
+          ".tc-table": {
+            borderColor: borderColor,
+          },
+          ".tc-cell": {
+            borderColor: borderColor,
+          },
+        }}
+      />
+
+      <ImageModal
+        isOpen={isImageModalOpen}
+        onClose={handleImageModalClose}
+        onSelect={handleImageSelect}
+        API_BASE_URL={API_BASE_URL}
+      />
+    </>
   );
 });
